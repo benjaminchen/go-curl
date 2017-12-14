@@ -3,59 +3,70 @@ package curl
 import (
 	"bytes"
 	"encoding/json"
-	"io/ioutil"
-	"io"
 	"errors"
+	"io"
+	"io/ioutil"
 	"net/http"
+	"time"
 )
 
+// Request stores settings.
 type Request struct {
-	Url			string
-	Headers		map[string]string
-	Cookies		map[string]string
-	Queries		map[string]string
-	PostData	map[string]interface{}
+	URL      string
+	Headers  map[string]string
+	Cookies  map[string]string
+	Queries  map[string]string
+	PostData map[string]interface{}
 	Timeout  time.Duration
 }
 
+// NewRequest creates a Request instance.
 func NewRequest() *Request {
 	return &Request{}
 }
 
-func (r *Request) SetUrl(url string) *Request {
-	r.Url = url
+// SetURL sets request url.
+func (r *Request) SetURL(url string) *Request {
+	r.URL = url
 	return r
 }
 
+// SetHeaders sets request headers.
 func (r *Request) SetHeaders(headers map[string]string) *Request {
 	r.Headers = headers
 	return r
 }
 
+// SetQueries sets request queries.
 func (r *Request) SetQueries(queries map[string]string) *Request {
 	r.Queries = queries
 	return r
 }
 
+// SetCookies sets request cookies.
 func (r *Request) SetCookies(cookies map[string]string) *Request {
 	r.Cookies = cookies
 	return r
 }
 
+// SetPostData sets request post datas.
 func (r *Request) SetPostData(postData map[string]interface{}) *Request {
 	r.PostData = postData
 	return r
 }
 
+// SetTimeout sets request timeout.
 func (r *Request) SetTimeout(timeout time.Duration) *Request {
 	r.Timeout = timeout
 	return r
 }
 
+// Get uses request get method
 func (r *Request) Get() (*Response, error) {
 	return r.send(http.MethodGet)
 }
 
+// Post uses request post method
 func (r *Request) Post() (*Response, error) {
 	return r.send(http.MethodPost)
 }
@@ -63,7 +74,7 @@ func (r *Request) Post() (*Response, error) {
 func (r *Request) send(method string) (response *Response, err error) {
 	response = NewResponse()
 
-	if r.Url == "" {
+	if r.URL == "" {
 		err = errors.New("empty request url, please set url first")
 		return
 	}
@@ -75,15 +86,15 @@ func (r *Request) send(method string) (response *Response, err error) {
 		var data []byte
 		if data, err = json.Marshal(r.PostData); err != nil {
 			return
-		} else {
-			payload = bytes.NewReader(data)
 		}
+
+		payload = bytes.NewReader(data)
 	} else {
 		payload = nil
 	}
 
 	var req *http.Request
-	if req, err = http.NewRequest(method, r.Url, payload); err != nil {
+	if req, err = http.NewRequest(method, r.URL, payload); err != nil {
 		return
 	}
 
@@ -107,18 +118,25 @@ func (r *Request) send(method string) (response *Response, err error) {
 	if len(r.Cookies) > 0 {
 		for k, v := range r.Cookies {
 			req.AddCookie(&http.Cookie{
-				Name: k,
+				Name:  k,
 				Value: v,
 			})
 		}
 	}
 
 	var res *http.Response
-	if res, err = http.DefaultClient.Do(req); err != nil {
-		return
-	} else {
-		response.Parse(res)
+	var client *http.Client
+	if r.Timeout > 0 {
+		client = &http.Client{
+			Timeout: r.Timeout,
+		}
 	}
+
+	if res, err = client.Do(req); err != nil {
+		return
+	}
+
+	response.Parse(res)
 
 	// clear body and close
 	defer func() {
