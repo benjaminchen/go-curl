@@ -15,6 +15,7 @@ type Request struct {
 	Cookies		map[string]string
 	Queries		map[string]string
 	PostData	map[string]interface{}
+	Timeout  time.Duration
 }
 
 func NewRequest() *Request {
@@ -43,6 +44,11 @@ func (r *Request) SetCookies(cookies map[string]string) *Request {
 
 func (r *Request) SetPostData(postData map[string]interface{}) *Request {
 	r.PostData = postData
+	return r
+}
+
+func (r *Request) SetTimeout(timeout time.Duration) *Request {
+	r.Timeout = timeout
 	return r
 }
 
