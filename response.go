@@ -10,6 +10,7 @@ type Response struct {
 	StatusCode int
 	Headers    map[string]string
 	Body       string
+	Raw        *http.Response
 }
 
 // NewResponse creates Response instance.
@@ -19,6 +20,7 @@ func NewResponse() *Response {
 
 // Parse parses http response.
 func (res *Response) Parse(raw *http.Response) (err error) {
+	res.Raw = raw
 	res.StatusCode = raw.StatusCode
 	res.Headers = make(map[string]string)
 
