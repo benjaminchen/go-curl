@@ -14,7 +14,7 @@ import (
 type Request struct {
 	URL      string
 	Headers  map[string]string
-	Cookies  map[string]string
+	Cookies  []*http.Cookie
 	Queries  map[string]string
 	PostData map[string]interface{}
 	Timeout  time.Duration
@@ -44,7 +44,7 @@ func (r *Request) SetQueries(queries map[string]string) *Request {
 }
 
 // SetCookies sets request cookies.
-func (r *Request) SetCookies(cookies map[string]string) *Request {
+func (r *Request) SetCookies(cookies []*http.Cookie) *Request {
 	r.Cookies = cookies
 	return r
 }
@@ -116,11 +116,8 @@ func (r *Request) send(method string) (response *Response, err error) {
 
 	// set cookies
 	if len(r.Cookies) > 0 {
-		for k, v := range r.Cookies {
-			req.AddCookie(&http.Cookie{
-				Name:  k,
-				Value: v,
-			})
+		for _, v := range r.Cookies {
+			req.AddCookie(v)
 		}
 	}
 
